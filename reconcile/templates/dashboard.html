@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div style="max-width: 800px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
+    <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Dashboard</h1>
+    <p style="font-size: 18px; margin-bottom: 20px;">Welcome to your dashboard!</p>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+      <a href="{% url 'upload_files' %}" style="padding: 10px 20px; border: none; border-radius: 5px; background-color: #4CAF50; color: #fff; text-decoration: none; margin-bottom: 10px; width: 200px;">Upload Files</a>
+      {% if reconciliation_id %}
+      <a href="{% url 'reconciliation_results' reconciliation_id %}" style="padding: 10px 20px; border: none; border-radius: 5px; background-color: #4CAF50; color: #fff; text-decoration: none; margin-bottom: 10px; width: 200px;">Reconciliation Results</a>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 40px auto; text-align: center;">
+    <h1 style="font-size: 36px; font-weight: bold; margin-bottom: 20px;">Reconciliation Results</h1>
+    {% if error %}
+        <p style="color: red; font-size: 18px;">{{ error }}</p>
+    {% else %}
+        <form id="filterForm" style="margin-bottom: 20px;">
+            {{ filter_form.as_p }}
+            <input type="text" id="referenceFilter" placeholder="Filter by Transaction Reference" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 50%; margin: 10px;">
+            <button type="submit" style="padding: 10px 20px; border: none; border-radius: 5px; background-color: #4CAF50; color: #fff; cursor: pointer;">Apply Filters</button>
+        </form>
+        <a href="{% url 'download_pdf' reconciliation.id %}" style="text-decoration: none; color: #337ab7; font-size: 18px;">Download PDF Report</a>
+        <canvas id="reconciliationChart" width="400" height="200" style="margin: 20px auto;"></canvas>
+        <h2 style="font-size: 24px; font-weight: bold; margin-top: 40px;">True Matches</h2>
+        <a href="{% url 'export_category' reconciliation.id 'true_matches' %}" style="text-decoration: none; color: #337ab7; font-size: 16px;">Export as CSV</a>
+        <table border="1" style="border-collapse: collapse; width: 100%; margin: 20px auto;">
+            <tr>
+                {% for col in true_matches.0.keys %}
+                    <th style="padding: 10px; border: 1px solid #ddd;">{{ col }}</th>
+                {% endfor %}
+            </tr>
+            {% for row in true_matches %}
+                <tr>
+                    {% for value in row.values %}
+                        <td style="padding: 10px; border: 1px solid #ddd;">{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+
+        <h2 style="font-size: 24px; font-weight: bold; margin-top: 40px;">Mismatched Matches</h2>
+        <a href="{% url 'export_category' reconciliation.id 'mismatched_matches' %}" style="text-decoration: none; color: #337ab7; font-size: 16px;">Export as CSV</a>
+        <table border="1" style="border-collapse: collapse; width: 100%; margin: 20px auto;">
+            <tr>
+                {% for col in mismatched_matches.0.keys %}
+                    <th style="padding: 10px; border: 1px solid #ddd;">{{ col }}</th>
+                {% endfor %}
+            </tr>
+            {% for row in mismatched_matches %}
+                <tr {% if row.amount_mismatch or row.status_mismatch or row.currency_mismatch or row.customer_id_mismatch %}style="background-color: #ffcccc;"{% endif %}>
+                    {% for value in row.values %}
+                        <td style="padding: 10px; border: 1px solid #ddd;">{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+
+        <h2 style="font-size: 24px; font-weight: bold; margin-top: 40px;">Internal Only</h2>
+        <a href="{% url 'export_category' reconciliation.id 'internal_only' %}" style="text-decoration: none; color: #337ab7; font-size: 16px;">Export as CSV</a>
+        <table border="1" style="border-collapse: collapse; width: 100%; margin: 20px auto;">
+            <tr>
+                {% for col in internal_only.0.keys %}
+                    <th style="padding: 10px; border: 1px solid #ddd;">{{ col }}</th>
+                {% endfor %}
+            </tr>
+            {% for row in internal_only %}
+                <tr>
+                    {% for value in row.values %}
+                        <td style="padding: 10px; border: 1px solid #ddd;">{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+
+        <h2 style="font-size: 24px; font-weight: bold; margin-top: 40px;">Provider Only</h2>
+        <a href="{% url 'export_category' reconciliation.id 'provider_only' %}" style="text-decoration: none; color: #337ab7; font-size: 16px;">Export as CSV</a>
+        <table border="1" style="border-collapse: collapse; width: 100%; margin: 20px auto;">
+            <tr>
+                {% for col in provider_only.0.keys %}
+                    <th style="padding: 10px; border: 1px solid #ddd;">{{ col }}</th>
+                {% endfor %}
+            </tr>
+            {% for row in provider_only %}
+                <tr>
+                    {% for value in row.values %}
+                        <td style="padding: 10px; border: 1px solid #ddd;">{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'js/package/dist/chart.js' %}"></script>
+    <script>
+        const ctx = document.getElementById('reconciliationChart').getContext('2d');
+        const chartData = JSON.parse('{{ chart_data | safe }}');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Transaction Counts',
+                    data: chartData.counts,
+                    backgroundColor: ['#36a2eb', '#ff6384', '#ffce56', '#4bc0c0'],
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        document.getElementById('referenceFilter').addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            document.querySelectorAll('table').forEach(table => {
+                const rows = table.getElementsByTagName('tr');
+                for (let i = 1; i < rows.length; i++) {
+                    const refCell = rows[i].getElementsByTagName('td')[0];
+                    if (refCell) {
+                        const txtValue = refCell.textContent || refCell.innerText;
+                        rows[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? '' : 'none';
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}

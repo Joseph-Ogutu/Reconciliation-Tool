@@ -1,0 +1,7 @@
+Django>=5.0
+pandas
+numpy
+django-pandas
+celery[redis]
+redis
+reportlab
